@@ -1,0 +1,9 @@
+{
+ "servport":"8010",
+ "host":"s0w1.zpdt.local",
+ "port":"2050",
+ "collid":"GILLJSRV",
+ "user":"MYUSER",
+ "pwd":"xxxxxxxx",
+ "debug":false
+}
