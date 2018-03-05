@@ -1,0 +1,14 @@
+{
+  "name": "serv",
+  "version": "0.1.0",
+  "description": "DB2 for zOS web based phone book app",
+  "main": "serv.js",
+  "scripts": {
+    "test": "node serv.js"
+  },
+  "author": "James Gill",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.16.2"
+  }
+}

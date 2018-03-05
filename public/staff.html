@@ -1,0 +1,174 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>Sample Employees</title>
+		<script src="jquery.min.js"></script>
+		<link rel="stylesheet" type="text/css" href="staff.css" >
+		<script type="text/javascript">
+			var debug = true;
+			var no_entries = 0;
+			var deptno = [];
+			var depttxt = [];
+			var mgrid = [];
+			var deptlookup = [];
+			var admrdept = [];
+			
+			function getDepartments() {
+				$.ajax({
+					type: 'POST',
+					url:  '/GetDepartments',
+					success: function(result) {
+						var retdata = JSON.parse(result);
+						$("#returned").append("Server reposonse:<br>\n");
+						$("#returned").append("Status Code = " + retdata["StatusCode"] + "<br>\n");
+						$("#returned").append("Status Desc = " + retdata["StatusDescription"] + "<br>\n");
+						$("#returned").append("Row count   = " + retdata["ResultSet Output"].length + "<br><br>\n");
+						deptno = [];
+						depttxt = [];
+						mgrid = [];
+						admrdept = [];
+						deptlookup = [];
+						$.each(retdata["ResultSet Output"],function(ict,rdata) {
+							var thisid = mgrid.length;
+							var thisdept = rdata["DEPTNO"];
+							var thistxt = rdata["DEPTNAME"];
+							var thisadmrdept = rdata["ADMRDEPT"];
+							var rowid = "rid" + thisid;
+							$("#tbdept").append("<tr id='"+rowid+"'><td>"+thisdept+"</td><td>"+thistxt+"</td></tr>\n");
+							document.getElementById(rowid).onclick = tbclick;
+							deptno[thisid] = thisdept;
+							depttxt[thisid] = thistxt;
+							mgrid[thisid] = rdata['MGRNO'];
+							deptlookup[thisdept] = thisid;
+							admrdept[thisid] = rdata['ADMRDEPT'];
+						});
+					},
+					error: function() {
+						$("#returned").append("AJAX CALL ERROR");
+					}
+				});
+			};
+			
+			function getEmployee(deptno,deptname,manager) {
+				$("#stret").html("");
+				$.ajax({
+					type: 'POST',
+					url:  '/GetEmployeesByDepartment',
+					data: { mgr: manager,
+							dept: deptno
+						  },
+					success: function(result) {
+						var retdata = JSON.parse(result);
+						$("#stret").append("Server reposonse:<br>\n");
+						$("#stret").append("Status Code = " + retdata["StatusCode"] + "<br>\n");
+						$("#stret").append("Status Desc = " + retdata["StatusDescription"] + "<br>\n");
+						$("#stret").append("Row count   = " + retdata["ResultSet Output"].length + "<br><br>\n");
+						$("#staffhd").html("Staff in "+deptno+" - "+deptname);
+//						$("#tbstaff tbody").remove();
+						$("#tbstaff > tbody").html("");
+						$.each(retdata["ResultSet Output"],function(ict,rdata) {
+							$("#tbstaff").append("<tr><td>"+rdata["FIRSTNME"]+"</td>"+
+													 "<td>"+rdata["MIDINIT"]+"</td>"+
+													 "<td>"+rdata["LASTNAME"]+"</td>"+
+													 "<td>"+rdata["EMPNO"]+"</td>"+
+													 "<td>"+rdata["PHONENO"]+"</td>"+
+													 "<td>"+rdata["MGR"]+"</td></tr>\n");
+						});
+					},
+					error: function() {
+						$("#stret").append("AJAX CALL ERROR");
+					}
+				});
+			};
+			
+			$(document).ready(function() {
+				getDepartments();
+			});
+			
+			function displayArray(arrayObjects) {
+				var len = arrayObjects.length;
+				var text = "";
+				for (var i = 0; i < len; i++) {
+					var myObject = arrayObjects[i];
+					for (var x in myObject) {
+						text += ( x + ": " + myObject[x] + " ");
+					}
+					text += "<br/>";
+				}
+				return text;
+			}
+			
+			function tbclick() {
+				var thisid = this.id.substr(3);
+				var manager = mgrid[thisid];
+				if (mgrid[thisid] == null) {
+					var adept = admrdept[thisid];
+					var adid  = deptlookup[adept];
+					if (adid != null) {
+						manager = mgrid[adid];
+					}
+				}
+				var department = deptno[thisid];
+				var deptname = depttxt[thisid];
+				getEmployee(department,deptname,manager);
+				//alert("You clicked my updated table at row id "+thisid+"\nDeptno = '" + department+"'\nMgrno = '"+manager+"'");
+			};
+
+		</script>
+	</head>
+	<body>
+		<h1>REST API Example</h1>
+		This page requires the following elements to work:
+		<br>
+		<ol>
+		<li>DB2 running with DDF started</li>
+		<li>Node.js app running from D:\AData\CODE\node.js\REST\serv (node serv.js)</li>
+		<li>The following in the 'public' subdirectory:</li>
+			<ul>
+				<li>staff.html (this page)</li>
+				<li>staff.css (supporting style sheet)</li>
+				<li>jquery.min.js (jquery 3.1.0)</li>
+			</ul>
+		</ol>
+		<br>
+		<table id="tblayout">
+		<tr>
+			<td valign="top">
+				<div id="container">
+					<h2>Departments</h2>
+					<table id="tbdept">
+						<thead>
+							<tr id='depthdr'><th>ID</th><th>Name</th></tr>
+						</thead>
+						<tbody>
+						</tbody>
+					</table>
+				</div>
+			</td>
+			<td>
+				&nbsp;
+			</td>
+			<td valign="top">
+				<div id="staffContainer">
+					<h2 id="staffhd">Staff</h2>
+					<table id="tbstaff">
+						<thead>
+							<tr id='staffhdr'><th>First Name</th><th>Mid Init</th><th>Last Name</th><th>Employee ID<th>Phone #</th><th>Manager</th></tr>
+						</thead>
+						<tbody>
+						</tbody>
+					</table>
+				</div>
+			</td>
+		</tr>
+		<tr><td><div id="returned"></div></td>
+			<td>
+				&nbsp;
+			</td>
+			<td><div id="stret"></div></td>
+		</tr>
+		</table>
+		<div id="tstampdata"></div>
+	</body>
+</html>
